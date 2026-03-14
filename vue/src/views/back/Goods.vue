@@ -256,6 +256,24 @@ const account = ref(
     localStorage.getItem('account') ? JSON.parse(localStorage.getItem('account')) : {}
 )
 
+// 库存预警阈值
+const inventoryThreshold = ref(10)
+
+// 加载库存预警阈值
+const loadInventoryThreshold = () => {
+  request.get('/inventory/threshold').then(res => {
+    if (res.code === '200' && res.data) {
+      inventoryThreshold.value = res.data
+    }
+  })
+}
+loadInventoryThreshold()
+
+// 检查是否需要库存预警
+const needWarning = (inventory) => {
+  return inventory < inventoryThreshold.value
+}
+
 </script>
 
 <template>
@@ -301,7 +319,14 @@ const account = ref(
           </template>
         </el-table-column>
 
-        <el-table-column prop="inventory" label="库存数量" width="70"></el-table-column>
+        <el-table-column prop="inventory" label="库存数量" width="90">
+          <template #default="scope">
+            <el-tag v-if="needWarning(scope.row.inventory)" type="danger" effect="dark" size="small">
+              {{ scope.row.inventory }} (预警)
+            </el-tag>
+            <span v-else>{{ scope.row.inventory }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="price" label="价格" width="70"></el-table-column>
         <el-table-column prop="unit" label="价格计量单位" width="70"></el-table-column>
         <el-table-column prop="date" label="上架日期" width="70"></el-table-column>

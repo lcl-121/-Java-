@@ -35,6 +35,7 @@ const routes = [
       title: '404'
     }
   },
+
   {
     path: '/home',
     name: 'home',
@@ -113,7 +114,7 @@ const routes = [
         name: 'FrontCollect',
         component: () => import('../views/front/Collect.vue'),
         meta: {
-          title: '我的收藏'
+          title: '商品点赞'
         }
       },
       {
@@ -244,6 +245,14 @@ const routes = [
         component: () => import('../views/back/Goods.vue'),
         meta: {
           title: '商品管理'
+        }
+      },
+      {
+        path: 'inventory-warning',
+        name: 'BackInventoryWarning',
+        component: () => import('../views/back/InventoryWarning.vue'),
+        meta: {
+          title: '库存预警设置'
         }
       },
       {

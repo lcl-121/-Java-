@@ -48,7 +48,7 @@ const handleCurrentChange = (newPageNum) => {
 const cancel = (id) => {
   request.delete('/collect/' + id).then(res => {
     if (res.code === '200') {
-      ElMessage.success('取消收藏成功')
+      ElMessage.success('取消点赞成功')
       load()
     }
   })
@@ -64,7 +64,7 @@ onMounted(() => {
 <template>
   <div class="home-container">
     <div style="margin-top: 20px;">
-      <h2>收藏商品</h2>
+      <h2>点赞商品</h2>
     </div>
     <div style="margin: 10px 0">
       <el-input style="width: 400px" placeholder="输入商品名称进行搜索" v-model="keyword"></el-input>
@@ -81,7 +81,7 @@ onMounted(() => {
             cancel-button-text='取消'
             icon="el-icon-info"
             icon-color="red"
-            title="您确定要取消收藏吗？"
+            title="您确定要取消点赞吗？"
             @confirm="cancel(good.id)"
         >
           <template #reference>
@@ -97,6 +97,10 @@ onMounted(() => {
         </div>
         <div class="good-info">
           <span class="price">{{ good.price }}元/{{ good.unit }}</span>
+          <span class="like-count">
+            <el-icon><StarFilled /></el-icon>
+            {{ good.likeCount || 0 }}
+          </span>
         </div>
       </div>
     </div>
@@ -151,6 +155,17 @@ onMounted(() => {
   color: #ff6700;
   font-weight: bold;
   font-size: 18px;
+}
+
+.like-count {
+  display: block;
+  margin-top: 8px;
+  color: #ff4757;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .delete-button {

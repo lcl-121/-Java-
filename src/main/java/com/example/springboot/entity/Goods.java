@@ -49,4 +49,16 @@ public class Goods {
 
     @TableField(exist = false)
     private Boolean isCollected;
+
+    /**
+     * 是否需要库存预警（不存储到数据库，仅用于前端展示）
+     */
+    @TableField(exist = false)
+    private Boolean needWarning;
+
+    /**
+     * 商品点赞数（不存储到数据库，仅用于前端展示）
+     */
+    @TableField(exist = false)
+    private Integer likeCount;
 }

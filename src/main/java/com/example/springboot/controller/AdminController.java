@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.springboot.common.Result;
 import com.example.springboot.entity.Admin;
 import com.example.springboot.service.IAdminService;
+import com.example.springboot.service.ISysConfigService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +25,10 @@ public class AdminController {
     // 注入管理员业务层服务对象
     @Resource
     private IAdminService adminService;
+
+    // 注入系统配置服务
+    @Resource
+    private ISysConfigService sysConfigService;
 
     /**
      * 新增/修改管理员信息
@@ -99,6 +104,20 @@ public class AdminController {
 
         // 执行分页查询并返回结果
         return Result.success(adminService.page(new Page<>(pageNum, pageSize), queryWrapper));
+    }
+
+    /**
+     * 设置库存预警阈值（仅管理员可访问）
+     * @param threshold 阈值
+     * @return 统一返回结果
+     */
+    @PostMapping("/set/threshold")
+    public Result setThreshold(@RequestBody Integer threshold) {
+        if (threshold == null || threshold < 0) {
+            return Result.error("400", "阈值必须为正整数");
+        }
+        sysConfigService.setInventoryThreshold(threshold);
+        return Result.success();
     }
 
 }

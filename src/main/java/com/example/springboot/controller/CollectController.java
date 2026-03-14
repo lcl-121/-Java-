@@ -53,7 +53,7 @@ public class CollectController {
             // 删除该收藏记录（取消收藏）
             collectService.remove(wrapper);
             // 返回取消收藏成功的结果，自定义605错误码
-            return Result.error("605","取消收藏成功");
+            return Result.error("605","取消点赞成功");
         }
         // 新增收藏成功，返回成功结果
         return Result.success();

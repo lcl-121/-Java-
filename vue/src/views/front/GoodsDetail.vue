@@ -103,7 +103,9 @@ const collect = (goodsId) => {
   request.post("/collect", data).then(res => {
     if (res.code === '200') {
       goods.value.isCollected = true;
-      ElMessage.success("收藏成功");
+      ElMessage.success("点赞成功");
+      // 重新加载商品数据以更新点赞数
+      loadGoods();
     } else {
       goods.value.isCollected = false;
       ElMessage.error(res.msg);
@@ -169,6 +171,10 @@ onMounted(() => {
             <span>库存 {{ goods.inventory }}</span>
           </div>
           <div class="stat-item">
+            <el-icon class="stat-icon"><StarFilled /></el-icon>
+            <span>点赞 {{ goods.likeCount || 0 }}</span>
+          </div>
+          <div class="stat-item">
             <el-icon class="stat-icon"><Calendar /></el-icon>
             <span>上架日期：{{ goods.date }}</span>
           </div>
@@ -207,14 +213,14 @@ onMounted(() => {
               <StarFilled v-if="goods.isCollected" />
               <Star v-else />
             </el-icon>
-            收藏
+            点赞
           </button>
         </div>
       </div>
     </div>
 
     <el-tabs class="product-tabs">
-      <el-tab-pane label="商品详情">
+      <el-tab-pane label="背景故事">
         <div class="product-content">
           <div v-html="goods.content"></div>
         </div>
@@ -417,6 +423,11 @@ onMounted(() => {
   margin-right: 8px;
   font-size: 20px;
   color: #999;
+}
+
+/* 点赞数特殊样式 */
+.stat-item .stat-icon {
+  color: #ff4757;
 }
 
 .delivery-section {

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import {PieChart,Document,Goods,User, Lock, SwitchButton, House, UserFilled,Notification,Setting,Picture} from '@element-plus/icons-vue'
+import {PieChart,Document,Goods,User, Lock, SwitchButton, House, UserFilled,Notification,Setting,Picture,WarningFilled} from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { projectName } from '../../config/config.default'
 
@@ -54,7 +54,6 @@ const handleUpdateAccount = (updatedAccount) => {
 }
 
 
-
 </script>
 
 <template>
@@ -63,7 +62,7 @@ const handleUpdateAccount = (updatedAccount) => {
     <header class="admin-header">
       <div class="header-left">
         <div class="logo-container" :style="{ width: sideWidth + 'px' }" @click="openThemeDrawer">
-          <img src="../../config/logo.svg" alt="Logo" class="logo-image" />
+          <img src="../../config/logo.svg" alt="Logo" class="logo-image"/>
           <h1 class="logo-text" v-show="logoTextShow">{{ projectName }}</h1>
         </div>
       </div>
@@ -72,36 +71,44 @@ const handleUpdateAccount = (updatedAccount) => {
         <el-dropdown>
           <div class="user-info">
             <div class="user-avatar">
-              <img :src="account.avatarUrl" />
+              <img :src="account.avatarUrl"/>
             </div>
-            <span class="user-name">{{ account.nickname}}</span>
+            <span class="user-name">{{ account.nickname }}</span>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
               <!--个人信息页面-->
               <el-dropdown-item v-if="account.role==='ROLE_ADMIN'">
                 <router-link to="/back/adminPerson" class="dropdown-link">
-                  <el-icon><User /></el-icon>
+                  <el-icon>
+                    <User/>
+                  </el-icon>
                   <span>个人信息</span>
                 </router-link>
               </el-dropdown-item>
               <!--个人信息页面-->
               <el-dropdown-item v-if="account.role==='ROLE_UNIT'">
                 <router-link to="/back/unitPerson" class="dropdown-link">
-                  <el-icon><User /></el-icon>
+                  <el-icon>
+                    <User/>
+                  </el-icon>
                   <span>个人信息</span>
                 </router-link>
               </el-dropdown-item>
               <!--个人信息页面-->
               <el-dropdown-item>
                 <router-link to="/back/password" class="dropdown-link">
-                  <el-icon><Lock /></el-icon>
+                  <el-icon>
+                    <Lock/>
+                  </el-icon>
                   <span>修改密码</span>
                 </router-link>
               </el-dropdown-item>
               <el-dropdown-item>
                 <div @click="logout" class="dropdown-link">
-                  <el-icon><SwitchButton /></el-icon>
+                  <el-icon>
+                    <SwitchButton/>
+                  </el-icon>
                   <span>退出登录</span>
                 </div>
               </el-dropdown-item>
@@ -125,66 +132,97 @@ const handleUpdateAccount = (updatedAccount) => {
           <!--后台菜单-->
 
           <el-menu-item index="/back/home">
-            <el-icon><House /></el-icon>
+            <el-icon>
+              <House/>
+            </el-icon>
             <template #title>后台首页</template>
           </el-menu-item>
 
           <el-menu-item index="/back/echarts">
-            <el-icon><PieChart /></el-icon>
+            <el-icon>
+              <PieChart/>
+            </el-icon>
             <template #title>数据统计</template>
           </el-menu-item>
 
           <el-menu-item index="/back/notice" v-if="account.role==='ROLE_ADMIN'">
-            <el-icon><Notification /></el-icon>
+            <el-icon>
+              <Notification/>
+            </el-icon>
             <template #title>公告管理</template>
           </el-menu-item>
 
           <el-menu-item index="/back/type" v-if="account.role==='ROLE_ADMIN'">
-            <el-icon><Setting /></el-icon>
+            <el-icon>
+              <Setting/>
+            </el-icon>
             <template #title>分类管理</template>
           </el-menu-item>
 
           <el-menu-item index="/back/banner" v-if="account.role==='ROLE_ADMIN'">
-            <el-icon><Picture /></el-icon>
+            <el-icon>
+              <Picture/>
+            </el-icon>
             <template #title>轮播图管理</template>
           </el-menu-item>
 
-          <el-menu-item index="/back/goods" >
-            <el-icon><Goods /></el-icon>
+          <el-menu-item index="/back/goods">
+            <el-icon>
+              <Goods/>
+            </el-icon>
             <template #title>商品管理</template>
           </el-menu-item>
 
-          <el-menu-item index="/back/orders" >
-            <el-icon><Document /></el-icon>
+          <el-menu-item index="/back/inventory-warning" v-if="account.role==='ROLE_ADMIN'">
+            <el-icon>
+              <WarningFilled/>
+            </el-icon>
+            <template #title>库存预警设置</template>
+          </el-menu-item>
+
+          <el-menu-item index="/back/orders">
+            <el-icon>
+              <Document/>
+            </el-icon>
             <template #title>订单管理</template>
           </el-menu-item>
 
 
           <el-sub-menu index="" v-if="account.role==='ROLE_ADMIN'">
             <template #title>
-              <el-icon><UserFilled /></el-icon>
+              <el-icon>
+                <UserFilled/>
+              </el-icon>
               <span>系统角色管理</span>
             </template>
 
             <!--系统角色菜单-->
 
             <el-menu-item index="/back/admin">
-              <el-icon><User /></el-icon>
+              <el-icon>
+                <User/>
+              </el-icon>
               <template #title>管理员管理</template>
             </el-menu-item>
 
             <el-menu-item index="/back/user">
-              <el-icon><User /></el-icon>
+              <el-icon>
+                <User/>
+              </el-icon>
               <template #title>用户管理</template>
             </el-menu-item>
 
             <el-menu-item index="/back/unit">
-              <el-icon><User /></el-icon>
+              <el-icon>
+                <User/>
+              </el-icon>
               <template #title>商家管理</template>
             </el-menu-item>
 
             <el-menu-item index="/back/tag">
-              <el-icon><User /></el-icon>
+              <el-icon>
+                <User/>
+              </el-icon>
               <template #title>标签管理</template>
             </el-menu-item>
 
@@ -210,11 +248,11 @@ const handleUpdateAccount = (updatedAccount) => {
           <h3>侧边栏设置</h3>
           <div class="drawer-option">
             <span>折叠侧边栏</span>
-            <el-switch v-model="isCollapse" active-color="var(--font-color-primary)" inactive-color="#dcdfe6" />
+            <el-switch v-model="isCollapse" active-color="var(--font-color-primary)" inactive-color="#dcdfe6"/>
           </div>
         </div>
 
-        <el-divider />
+        <el-divider/>
 
         <div class="drawer-section">
           <h3>主题设置</h3>

@@ -6,9 +6,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.springboot.common.Result;
 import com.example.springboot.config.interceptor.AuthAccess;
+import com.example.springboot.entity.Collect;
 import com.example.springboot.entity.Goods;
 import com.example.springboot.entity.Notice;
 import com.example.springboot.entity.Type;
+import com.example.springboot.service.ICollectService;
 import com.example.springboot.service.IGoodsService;
 import com.example.springboot.service.INoticeService;
 import com.example.springboot.service.ITypeService;
@@ -34,6 +36,9 @@ public class TypeController {
     // 注入商品业务层服务对象，用于处理商品相关的业务逻辑（关联查询使用）
     @Resource
     private IGoodsService goodsService;
+    @Resource
+    private ICollectService collectService;
+
 
     /**
      * 新增或更新分类接口
@@ -90,15 +95,23 @@ public class TypeController {
             LambdaQueryWrapper<Goods> queryWrapper = new LambdaQueryWrapper<>();
             // 商品状态为上架
             queryWrapper.eq(Goods::getStatus,true);
-            // 商品所属分类id匹配当前分类id
+            // 商品所属分类 id 匹配当前分类 id
             queryWrapper.eq(Goods::getTypeId,type.getId());
-            // 按商品id升序排列
+            // 按商品 id 升序排列
             queryWrapper.orderByAsc(Goods::getId);
-            // 只查询前4条数据
+            // 只查询前 4 条数据
             queryWrapper.last("limit 4");
             // 执行查询，获取该分类下的商品列表
             List<Goods> goodsList = goodsService.list(queryWrapper);
-
+        
+            // 为每个商品设置点赞数
+            for (Goods goods : goodsList) {
+                LambdaQueryWrapper<Collect> countWrapper = new LambdaQueryWrapper<>();
+                countWrapper.eq(Collect::getItemId, goods.getId());
+                long likeCount = collectService.count(countWrapper);
+                goods.setLikeCount((int) likeCount);
+            }
+        
             // 商品列表非空则赋值，否则赋值空集合
             if(CollectionUtil.isNotEmpty(goodsList)) {
                 type.setGoodsList(goodsList);

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { ArrowRight, ShoppingCart, StarFilled, Bell, Location } from '@element-plus/icons-vue'
+import { ArrowRight, ShoppingCart, StarFilled, Bell, Location, Picture } from '@element-plus/icons-vue'
 import request from '../../utils/request'
 
 import {useRouter} from "vue-router";
@@ -12,6 +12,24 @@ const category = ref([])
 const banners = ref([])
 const notices = ref([])
 const recommend = ref([])
+
+// 背景主题相关
+const bgThemes = ref([
+  { id: 0, name: '默认', url: '' },
+  { id: 1, name: '咒术回战', url: new URL('../../assets/bg1.jpg', import.meta.url).href },
+  { id: 2, name: '动漫 2', url: new URL('../../assets/bg2.jpg', import.meta.url).href },
+  { id: 3, name: '动漫 3', url: new URL('../../assets/bg3.jpg', import.meta.url).href },
+  { id: 4, name: '动漫 4', url: new URL('../../assets/bg4.jpg', import.meta.url).href },
+  { id: 5, name: '动漫 5', url: new URL('../../assets/bg5.jpg', import.meta.url).href }
+])
+const currentBgIndex = ref(parseInt(localStorage.getItem('homeBgTheme') || '0'))
+const showBgSelector = ref(false)
+
+// 切换背景主题
+const changeBgTheme = (index) => {
+  currentBgIndex.value = index
+  localStorage.setItem('homeBgTheme', index.toString())
+}
 
 // 用户信息
 const account = ref(localStorage.getItem('account') ? JSON.parse(localStorage.getItem('account')) : {})
@@ -62,33 +80,60 @@ onMounted(() => {
 
 
 <template>
-  <div class="homepage">
+  <div class="homepage" :style="{ backgroundImage: currentBgIndex > 0 ? `url(${bgThemes[currentBgIndex].url})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }">
+    <!-- 背景主题切换按钮 -->
+    <div class="bg-theme-toggle">
+      <el-button 
+        circle 
+        :icon="Picture" 
+        @click="showBgSelector = !showBgSelector"
+        title="切换背景"
+      />
+    </div>
+    
+    <!-- 背景主题选择器 -->
+    <transition name="fade">
+      <div v-if="showBgSelector" class="bg-theme-selector">
+        <div class="selector-header">
+          <span>选择背景主题</span>
+          <el-icon @click="showBgSelector = false"><Close /></el-icon>
+        </div>
+        <div class="selector-content">
+          <div 
+            v-for="theme in bgThemes" 
+            :key="theme.id" 
+            class="theme-item"
+            :class="{ active: currentBgIndex === theme.id }"
+            @click="changeBgTheme(theme.id)"
+          >
+            <div class="theme-name">{{ theme.name }}</div>
+          </div>
+        </div>
+      </div>
+    </transition>
     <!-- 公告轮播 -->
     <div class="notice-section">
-      <el-carousel height="40px" direction="vertical" :autoplay="true" :interval="3000">
-        <el-carousel-item v-for="item in notices" :key="item.id">
-          <h5 class="medium">
-            <el-icon><Bell /></el-icon>
-            {{ item.name }}
-          </h5>
-        </el-carousel-item>
-      </el-carousel>
+      <div class="notice-content">
+        <el-icon class="notice-icon"><Bell /></el-icon>
+        <el-carousel height="30px" direction="vertical" :autoplay="true" :interval="3000">
+          <el-carousel-item v-for="item in notices" :key="item.id">
+            <span class="notice-text">{{ item.name }}</span>
+          </el-carousel-item>
+        </el-carousel>
+      </div>
     </div>
 
     <!-- 顶部三栏布局 -->
     <div class="top-section">
       <!-- 左侧分类 -->
       <div class="category-sidebar">
-        <div class="category-header">
-          <span class="category-title">分类</span>
-        </div>
-        <ul class="category-list">
+        <ul class="category-list" >
           <li v-for="type in types" :key="type.id" @click="router.push('/front/goods?typeId=' + type.id)">
-            {{ type.name }}
+            <span class="category-text">{{ type.name }}</span>
             <el-icon><ArrowRight /></el-icon>
           </li>
           <li @click="$router.push('/front/goods?typeId=')">
-            更多分类>>>
+            <span class="category-text">更多分类</span>
             <el-icon><ArrowRight /></el-icon>
           </li>
         </ul>
@@ -96,14 +141,13 @@ onMounted(() => {
 
       <!-- 中间轮播图 -->
       <div class="carousel-section">
-        <el-carousel height="420px"  class="main-carousel">
+        <el-carousel height="380px" class="main-carousel">
           <el-carousel-item v-for="banner in banners" :key="banner.id">
             <div class="banner-wrapper">
               <img :src="banner.img" class="banner-image">
               <div class="banner-content">
                 <div class="banner-title">{{banner.name}}</div>
-                <div class="banner-desc">{{banner.info}}</div>
-                <el-button type="primary" class="banner-btn" @click="router.push('/front/goodsDetail?id='+banner.goodsId)">
+                <el-button type="primary" size="small" class="banner-btn" @click="router.push('/front/goodsDetail?id='+banner.goodsId)">
                   立即查看
                 </el-button>
               </div>
@@ -119,23 +163,11 @@ onMounted(() => {
             <img v-if="!isGuest" :src="account.avatarUrl" alt="用户头像" class="avatar-img">
             <img v-else src="../../assets/用户头像.svg" alt="用户头像" class="avatar-img">
           </div>
-          <div class="user-details">
-            <div class="username">{{ isGuest ? '游客' : account.nickname }}</div>
-            <div class="user-actions" v-if="!account.id">
-              <span class="register" @click="router.push('/register')">注册</span>
-              <span class="divider">|</span>
-              <span class="login" @click="router.push('/register')">开店</span>
-            </div>
-          </div>
+          <div class="username">{{ isGuest ? '游客' : account.nickname }}</div>
         </div>
 
-        <div class="login-prompt">
-          {{ isGuest ? '登录后更多精彩' : '欢迎回来' }}
-          <div class="login-desc">{{ isGuest ? '嗨！更懂你的推荐，更便捷的搜索' : '为您推荐更多个性化内容' }}</div>
-        </div>
-
-        <el-button type="primary" class="login-btn" @click="isGuest ? router.push('/login') : router.push('/front/orders')">
-          {{ isGuest ? '立即登录' : '查看个人订单' }}
+        <el-button type="primary" size="small" class="login-btn" @click="isGuest ? router.push('/login') : router.push('/front/orders')">
+          {{ isGuest ? '立即登录' : '查看订单' }}
         </el-button>
 
         <div class="user-tools">
@@ -145,7 +177,7 @@ onMounted(() => {
           </div>
           <div class="tool-item" @click="router.push('/front/collect')">
             <el-icon><StarFilled /></el-icon>
-            <div class="tool-name">收藏夹</div>
+            <div class="tool-name">点赞</div>
           </div>
           <div class="tool-item" @click="router.push('/front/address')">
             <el-icon><Location /></el-icon>
@@ -167,6 +199,10 @@ onMounted(() => {
           <img :src="product.img" class="recommend-image">
           <div class="recommend-info">
             <h3 class="recommend-name">{{ product.name }}</h3>
+            <div class="like-count">
+              <el-icon><StarFilled /></el-icon>
+              {{ product.likeCount || 0 }}
+            </div>
           </div>
         </div>
       </div>
@@ -180,7 +216,7 @@ onMounted(() => {
             <div class="category-header-row">
               <h3 class="category-name">{{ item.name }}</h3>
               <span class="view-more" @click="router.push('/front/goods?typeId=' + item.id)">
-                查看更多
+                查看更多 →
               </span>
             </div>
             <div class="category-image-container">
@@ -194,12 +230,20 @@ onMounted(() => {
                    @click="router.push('/front/goodsDetail?id=' + goods.id)">
                 <img :src="goods.img" class="goods-image">
                 <div class="goods-name">{{ goods.name }}</div>
+                <div class="like-count">
+                  <el-icon><StarFilled /></el-icon>
+                  {{ goods.likeCount || 0 }}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+    <!-- 页脚 -->
+    <footer class="front-footer">
+      <p>© {{ new Date().getFullYear() }} {{ projectName }}. 保留所有权利</p>
+    </footer>
   </div>
 </template>
 
@@ -210,13 +254,16 @@ onMounted(() => {
   font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
   width: 1400px;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 .notice-section {
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.85);
   padding: 10px;
-  border-radius: 4px;
+  border-radius: 8px;
   margin-bottom: 15px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .medium {
@@ -243,14 +290,15 @@ onMounted(() => {
 /* 左侧分类样式 */
 .category-sidebar {
   width: 200px;
-  background-color: #333;
-  border-radius: 4px;
+  background-color: rgba(60, 60, 70, 0.92);
+  border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
 
 .category-header {
   padding: 15px;
-  background-color: #444;
+  background: linear-gradient(135deg, #444 0%, #2a2a2a 100%);
   display: flex;
   align-items: center;
 }
@@ -334,17 +382,23 @@ onMounted(() => {
 /* 右侧个人信息栏样式 */
 .user-sidebar {
   width: 260px;
-  background-color: #fff;
-  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
   align-items: center;
   text-align: center;
+  transition: all 0.3s ease;
+}
+
+.user-sidebar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .user-info {
@@ -441,10 +495,11 @@ onMounted(() => {
 
 /* 推荐区域 */
 .recommend-section {
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.9);
   padding: 20px;
-  border-radius: 4px;
+  border-radius: 8px;
   margin-bottom: 25px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .section-header {
@@ -475,13 +530,14 @@ onMounted(() => {
 
 .product-card {
   flex: 1;
-  background-color: #f5f5f5;
+  background-color: rgba(250, 250, 252, 0.95);
   padding: 15px;
   display: flex;
   align-items: center;
   cursor: pointer;
-  border-radius: 8px;
-  transition: transform 0.2s;
+  border-radius: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid rgba(200, 200, 210, 0.3);
 }
 
 .product-card:hover {
@@ -511,11 +567,22 @@ onMounted(() => {
   width: 100%;
 }
 
+.like-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #ff4757;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
 /* 分类商品区域 */
 .category-goods-section {
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.9);
   padding: 20px;
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .category-block {
@@ -580,12 +647,13 @@ onMounted(() => {
 }
 
 .goods-item {
-  border: 1px solid #ccc;
+  border: 1px solid rgba(204, 204, 204, 0.3);
   padding-bottom: 10px;
   border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.2s;
+  background-color: rgba(255, 255, 255, 0.0);
 }
 
 .goods-item:hover {

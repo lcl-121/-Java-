@@ -22,13 +22,23 @@ const goods = ref([])
 const sortBy = ref('all')
 
 const load = () => {
+  // 将前端 sortBy 映射到后端 sort 参数
+  let sortParam = '综合'
+  if (sortBy.value === 'new') {
+    sortParam = '最新'
+  } else if (sortBy.value === 'sales') {
+    sortParam = '销量'
+  } else if (sortBy.value === 'likes') {
+    sortParam = '点赞'
+  }
+  
   request.get("/goods/front/page", {
     params: {
       pageNum: pageNum.value,
       pageSize: pageSize.value,
       keyword: searchForm.keyword,
       typeId: typeId.value,
-      sortBy: sortBy.value
+      sort: sortParam
     }
   }).then(res => {
     if (res.data) {
@@ -124,6 +134,7 @@ onMounted(() => {
         <button :class="{ active: sortBy === 'all' }" @click="updateSort('all')">综合</button>
         <button :class="{ active: sortBy === 'new' }" @click="updateSort('new')">新品</button>
         <button :class="{ active: sortBy === 'sales' }" @click="updateSort('sales')">销量</button>
+        <button :class="{ active: sortBy === 'likes' }" @click="updateSort('likes')">点赞</button>
       </div>
     </div>
 
@@ -135,8 +146,18 @@ onMounted(() => {
           <span class="price">{{ good.price }}元/{{ good.unit }}</span>
         </div>
         <div class="tags">
-          <span class="tag installment">库存{{ good.inventory }}</span>
-          <span class="tag coupon">销量{{ good.sales }}</span>
+          <span class="tag installment">
+            <el-icon><ShoppingBag /></el-icon>
+            库存{{ good.inventory }}
+          </span>
+          <span class="tag coupon">
+            <el-icon><ShoppingCart /></el-icon>
+            销量{{ good.sales }}
+          </span>
+          <span class="tag like-tag">
+            <el-icon><StarFilled /></el-icon>
+            点赞数{{ good.likeCount || 0 }}
+          </span>
         </div>
       </div>
     </div>
@@ -266,6 +287,11 @@ onMounted(() => {
 .coupon {
   background-color: #ffebee;
   color: #e53935;
+}
+
+.like-tag {
+  background-color: #fff3e0;
+  color: #ff9800;
 }
 
 .filters {

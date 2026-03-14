@@ -41,6 +41,9 @@ public class GoodsController {
     // 注入用户业务层服务对象，用于调用用户相关的业务逻辑
     @Resource
     private IUserService userService;
+    // 注入系统配置服务
+    @Resource
+    private ISysConfigService sysConfigService;
 
     /**
      * 新增/更新商品
@@ -94,25 +97,38 @@ public class GoodsController {
     }
 
     /**
-     * 根据ID查询单个商品详情（包含当前用户的收藏状态）
-     * @param id 商品主键ID（从URL路径中获取）
-     * @return 统一返回结果Result，包含带收藏状态的商品实体对象
+     * 根据 ID 查询单个商品详情（包含当前用户的收藏状态和点赞数）
+     * @param id 商品主键 ID（从 URL 路径中获取）
+     * @return 统一返回结果 Result，包含带收藏状态的商品实体对象
      */
     @GetMapping("/{id}")
     public Result findOne(@PathVariable Integer id) {
-        // 根据ID查询商品基础信息
+        // 根据 ID 查询商品基础信息
         Goods goods = goodsService.getById(id);
-
-        // 构建收藏查询条件：当前用户 + 当前商品
-        LambdaQueryWrapper<Collect> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Collect::getUserId,TokenUtils.getCurrentUser().getId());
-        wrapper.eq(Collect::getItemId,id);
-        // 查询当前用户是否收藏了该商品
-        Collect one = collectService.getOne(wrapper);
-
-        // 为商品对象设置收藏状态（true：已收藏，false：未收藏）
-        goods.setIsCollected(one != null);
-
+    
+        // 查询商品总点赞数
+        LambdaQueryWrapper<Collect> countWrapper = new LambdaQueryWrapper<>();
+        countWrapper.eq(Collect::getItemId, id);
+        long likeCount = collectService.count(countWrapper);
+        goods.setLikeCount((int) likeCount);
+    
+        // 获取当前登录用户信息
+        Account currentUser = TokenUtils.getCurrentUser();
+        if (currentUser != null && currentUser.getId() != null) {
+            // 构建收藏查询条件：当前用户 + 当前商品
+            LambdaQueryWrapper<Collect> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Collect::getUserId, currentUser.getId());
+            wrapper.eq(Collect::getItemId, id);
+            // 查询当前用户是否收藏了该商品
+            Collect one = collectService.getOne(wrapper);
+    
+            // 为商品对象设置收藏状态（true：已收藏，false：未收藏）
+            goods.setIsCollected(one != null);
+        } else {
+            // 未登录状态，不设置收藏状态
+            goods.setIsCollected(false);
+        }
+    
         // 返回带收藏状态的商品信息
         return Result.success(goods);
     }
@@ -143,7 +159,7 @@ public class GoodsController {
 
         // 排序逻辑：根据前端传入的排序类型设置排序规则
         if(StrUtil.equals(sort,"综合")){
-            // 综合排序：按商品ID升序
+            // 综合排序：按商品 ID 升序
             queryWrapper.orderByAsc(Goods::getId);
         }else if(StrUtil.equals(sort,"销量")){
             // 销量排序：按销量降序
@@ -158,8 +174,25 @@ public class GoodsController {
             queryWrapper.like(Goods::getName, keyword);
         }
 
+        // 执行分页查询
+        Page<Goods> page = goodsService.page(new Page<>(pageNum, pageSize), queryWrapper);
+
+        // 为每个商品设置点赞数
+        for (Goods goods : page.getRecords()) {
+            LambdaQueryWrapper<Collect> countWrapper = new LambdaQueryWrapper<>();
+            countWrapper.eq(Collect::getItemId, goods.getId());
+            long likeCount = collectService.count(countWrapper);
+            goods.setLikeCount((int) likeCount);
+        }
+
+        // 如果是点赞排序，在内存中按点赞数降序排序
+        if(StrUtil.equals(sort,"点赞")){
+            List<Goods> records = page.getRecords();
+            records.sort((g1, g2) -> Integer.compare(g2.getLikeCount(), g1.getLikeCount()));
+        }
+
         // 执行分页查询并返回结果
-        return Result.success(goodsService.page(new Page<>(pageNum, pageSize), queryWrapper));
+        return Result.success(page);
     }
 
     /**
@@ -235,44 +268,67 @@ public class GoodsController {
             queryWrapper.like(Goods::getName, keyword);
         }
 
-        // 筛选用户收藏的商品（根据收藏的商品ID列表）
+        // 筛选用户收藏的商品（根据收藏的商品 ID 列表）
         queryWrapper.in(Goods::getId, ids);
-
+        
+        // 执行分页查询
+        Page<Goods> page = goodsService.page(new Page<>(pageNum, pageSize), queryWrapper);
+        
+        // 为每个商品设置点赞数
+        for (Goods goods : page.getRecords()) {
+            LambdaQueryWrapper<Collect> countWrapper = new LambdaQueryWrapper<>();
+            countWrapper.eq(Collect::getItemId, goods.getId());
+            long likeCount = collectService.count(countWrapper);
+            goods.setLikeCount((int) likeCount);
+        }
+        
         // 执行分页查询并返回结果
-        return Result.success(goodsService.page(new Page<>(pageNum, pageSize), queryWrapper));
+        return Result.success(page);
     }
 
     /**
      * 商品分页查询（管理员查全部，商家仅查自己店铺的商品，支持关键词搜索）
+     * 同时为每个商品添加库存预警标识
      * @param pageNum 当前页码（必填）
      * @param pageSize 每页显示条数（必填）
      * @param keyword 搜索关键词（默认空字符串：不搜索）
-     * @return 统一返回结果Result，包含商品分页列表及分页信息
+     * @return 统一返回结果 Result，包含商品分页列表及分页信息
      */
     @GetMapping("/page")
     public Result findPage(@RequestParam Integer pageNum,
                            @RequestParam Integer pageSize,
                            @RequestParam(defaultValue = "") String keyword) {
-
+    
         // 构建商品查询条件构造器
         LambdaQueryWrapper<Goods> queryWrapper = new LambdaQueryWrapper<>();
-        // 默认按商品ID降序排序
+        // 默认按商品 ID 降序排序
         queryWrapper.orderByDesc(Goods::getId);
-
+    
         // 关键词搜索：关键词非空时，按商品名称模糊查询
         if (StrUtil.isNotBlank(keyword)) {
             queryWrapper.like(Goods::getName, keyword);
         }
-
+    
         // 获取当前登录用户信息
         Account account = TokenUtils.getCurrentUser();
         // 权限控制：非管理员用户仅查询自己店铺（unitId）的商品
         if(!StrUtil.equals(account.getRole(),"ROLE_ADMIN")){
             queryWrapper.eq(Goods::getUnitId,account.getId());
         }
-
+    
+        // 执行分页查询
+        Page<Goods> page = goodsService.page(new Page<>(pageNum, pageSize), queryWrapper);
+    
+        // 获取库存预警阈值
+        Integer threshold = sysConfigService.getInventoryThreshold();
+    
+        // 为每个商品设置库存预警标识
+        for (Goods goods : page.getRecords()) {
+            goods.setNeedWarning(goods.getInventory() < threshold);
+        }
+    
         // 执行分页查询并返回结果
-        return Result.success(goodsService.page(new Page<>(pageNum, pageSize), queryWrapper));
+        return Result.success(page);
     }
 
     /**
@@ -343,15 +399,15 @@ public class GoodsController {
         // 调用用户协同过滤算法，获取推荐商品ID列表
         List<Integer> itemIds = UserCF.recommend(currentUser.getId(), data);
 
-        // 将推荐商品ID转换为商品对象，并限制最多4个
+        // 将推荐商品 ID 转换为商品对象，并限制最多 4 个
         List<Goods> recommendResult = itemIds.stream()
                 .map(itemId -> allItems.stream()
                         .filter(x -> x.getId().equals(itemId))
                         .findFirst().orElse(null))
                 .limit(RECOMMENDER_NUM)
                 .collect(Collectors.toList());
-
-        // 若推荐结果不足4个，补充随机商品
+        
+        // 若推荐结果不足 4 个，补充随机商品
         if (recommendResult.size() < RECOMMENDER_NUM) {
             // 计算需要补充的商品数量
             int num = RECOMMENDER_NUM - recommendResult.size();
@@ -359,13 +415,22 @@ public class GoodsController {
             List<Goods> items = allItems.stream()
                     .filter(item -> !recommendResult.contains(item))
                     .collect(Collectors.toList());
-            // 从差集中随机获取num个商品
+            // 从差集中随机获取 num 个商品
             List<Goods> list = getRandomItems(num,items);
             // 补充到推荐结果中
             recommendResult.addAll(list);
-            return Result.success(recommendResult);
         }
-
+        
+        // 为每个推荐商品设置点赞数
+        for (Goods goods : recommendResult) {
+            if (goods != null) {
+                LambdaQueryWrapper<Collect> countWrapper = new LambdaQueryWrapper<>();
+                countWrapper.eq(Collect::getItemId, goods.getId());
+                long likeCount = collectService.count(countWrapper);
+                goods.setLikeCount((int) likeCount);
+            }
+        }
+        
         // 返回最终推荐结果
         return Result.success(recommendResult);
     }
