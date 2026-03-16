@@ -187,6 +187,13 @@ const handleUpdateAccount = (updatedAccount) => {
             <template #title>订单管理</template>
           </el-menu-item>
 
+          <el-menu-item index="/back/blindbox" v-if="account.role==='ROLE_ADMIN'">
+            <el-icon>
+              <Setting />
+            </el-icon>
+            <template #title>盲盒管理</template>
+          </el-menu-item>
+
 
           <el-sub-menu index="" v-if="account.role==='ROLE_ADMIN'">
             <template #title>

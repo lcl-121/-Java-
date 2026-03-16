@@ -96,7 +96,7 @@ onMounted(() => {
       <div v-if="showBgSelector" class="bg-theme-selector">
         <div class="selector-header">
           <span>选择背景主题</span>
-          <el-icon @click="showBgSelector = false"><Close /></el-icon>
+          <el-icon @click="showBgSelector = false">✕</el-icon>
         </div>
         <div class="selector-content">
           <div 
@@ -178,6 +178,10 @@ onMounted(() => {
           <div class="tool-item" @click="router.push('/front/collect')">
             <el-icon><StarFilled /></el-icon>
             <div class="tool-name">点赞</div>
+          </div>
+          <div class="tool-item blindbox-tool" @click="router.push('/front/blindbox')">
+            <span style="font-size: 20px;">🎁</span>
+            <div class="tool-name">盲盒活动</div>
           </div>
           <div class="tool-item" @click="router.push('/front/address')">
             <el-icon><Location /></el-icon>
@@ -675,5 +679,34 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 14px;
+}
+
+/* 盲盒活动工具按钮特殊样式 */
+.blindbox-tool {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  padding: 8px;
+  animation: blindbox-pulse 2s infinite;
+}
+
+.blindbox-tool .tool-name {
+  color: white;
+  font-weight: 500;
+}
+
+.blindbox-tool .el-icon {
+  color: white;
+  font-size: 20px;
+}
+
+@keyframes blindbox-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+  }
 }
 </style>

@@ -141,6 +141,14 @@ const routes = [
           title: '购物车'
         }
       },
+      {
+        path: 'blindbox',
+        name: 'FrontBlindBox',
+        component: () => import('../views/front/BlindBox.vue'),
+        meta: {
+          title: '盲盒活动'
+        }
+      },
       // 前台子路由
     ]
   },
@@ -269,6 +277,14 @@ const routes = [
         component: () => import('../views/back/Echarts.vue'),
         meta: {
           title: '数据统计'
+        }
+      },
+      {
+        path: 'blindbox',
+        name: 'BackBlindBox',
+        component: () => import('../views/back/BlindBox.vue'),
+        meta: {
+          title: '盲盒管理'
         }
       },
       // 后台子路由
